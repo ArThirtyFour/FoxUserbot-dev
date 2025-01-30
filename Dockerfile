@@ -10,4 +10,4 @@ RUN venv/bin/pip install kurigram
 RUN chmod +x /Foxuserbot/run_docker.sh
 
 
-CMD ["/bin/bash", "-c", "/Foxuserbot/run_docker.sh && venv/bin/python main.py"]x
+CMD ["/bin/bash", "-c", "/Foxuserbot/run_docker.sh && venv/bin/python main.py"]
