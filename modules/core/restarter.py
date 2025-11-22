@@ -8,34 +8,34 @@ import wget
 from pyrogram import Client
 from pyrogram.types import Message
 
-from command import fox_command, fox_sudo, who_message, get_text
+from command import Locale, fox_command, fox_sudo, who_message
 
 filename = os.path.basename(__file__)
 Module_Name = 'Restarter'
 
-LANGUAGES = {
-    "en": {
-        "updating": "<emoji id='5264727218734524899'>🔄</emoji> **Updating {repo_type}...**",
-        "update_success": "<emoji id='5237699328843200968'>✅</emoji> **Userbot successfully updated\n<emoji id='5264727218734524899'>🔄</emoji> Restarting...**",
-        "error_occurred": "<emoji id='5210952531676504517'>❌</emoji> **An error occurred:**\n\n`{error}`",
-        "restarting": "<emoji id='5264727218734524899'>🔄</emoji> **Restarting userbot...**",
-        "restart_error": "<emoji id='5210952531676504517'>❌</emoji> **An error occurred...**"
-    },
-    "ru": {
-        "updating": "<emoji id='5264727218734524899'>🔄</emoji> **Обновление {repo_type}...**",
-        "update_success": "<emoji id='5237699328843200968'>✅</emoji> **Юзербот успешно обновлен\n<emoji id='5264727218734524899'>🔄</emoji> Перезапуск...**",
-        "error_occurred": "<emoji id='5210952531676504517'>❌</emoji> **Произошла ошибка:**\n\n`{error}`",
-        "restarting": "<emoji id='5264727218734524899'>🔄</emoji> **Перезапуск юзербота...**",
-        "restart_error": "<emoji id='5210952531676504517'>❌</emoji> **Произошла ошибка...**"
-    },
-    "ua": {
-        "updating": "<emoji id='5264727218734524899'>🔄</emoji> **Оновлення {repo_type}...**",
-        "update_success": "<emoji id='5237699328843200968'>✅</emoji> **Юзербот успішно оновлено\n<emoji id='5264727218734524899'>🔄</emoji> Перезавантаження...**",
-        "error_occurred": "<emoji id='5210952531676504517'>❌</emoji> **Сталася помилка:**\n\n`{error}`",
-        "restarting": "<emoji id='5264727218734524899'>🔄</emoji> **Перезапуск юзербота...**",
-        "restart_error": "<emoji id='5210952531676504517'>❌</emoji> **Сталася помилка...**"
-    }
+en_strings = {
+    "updating": "<emoji id='5264727218734524899'>🔄</emoji> **Updating {repo_type}...**",
+    "update_success": "<emoji id='5237699328843200968'>✅</emoji> **Userbot successfully updated\n<emoji id='5264727218734524899'>🔄</emoji> Restarting...**",
+    "error_occurred": "<emoji id='5210952531676504517'>❌</emoji> **An error occurred:**\n\n`{error}`",
+    "restarting": "<emoji id='5264727218734524899'>🔄</emoji> **Restarting userbot...**",
+    "restart_error": "<emoji id='5210952531676504517'>❌</emoji> **An error occurred...**"
 }
+ru_strings = {
+    "updating": "<emoji id='5264727218734524899'>🔄</emoji> **Обновление {repo_type}...**",
+    "update_success": "<emoji id='5237699328843200968'>✅</emoji> **Юзербот успешно обновлен\n<emoji id='5264727218734524899'>🔄</emoji> Перезапуск...**",
+    "error_occurred": "<emoji id='5210952531676504517'>❌</emoji> **Произошла ошибка:**\n\n`{error}`",
+    "restarting": "<emoji id='5264727218734524899'>🔄</emoji> **Перезапуск юзербота...**",
+    "restart_error": "<emoji id='5210952531676504517'>❌</emoji> **Произошла ошибка...**"
+}
+ua_strings = {
+    "updating": "<emoji id='5264727218734524899'>🔄</emoji> **Оновлення {repo_type}...**",
+    "update_success": "<emoji id='5237699328843200968'>✅</emoji> **Юзербот успішно оновлено\n<emoji id='5264727218734524899'>🔄</emoji> Перезавантаження...**",
+    "error_occurred": "<emoji id='5210952531676504517'>❌</emoji> **Сталася помилка:**\n\n`{error}`",
+    "restarting": "<emoji id='5264727218734524899'>🔄</emoji> **Перезапуск юзербота...**",
+    "restart_error": "<emoji id='5210952531676504517'>❌</emoji> **Сталася помилка...**"
+}
+
+locale = Locale(en=en_strings, ru=ru_strings, ua=ua_strings)
 
 
 def restart_executor(chat_id=None, message_id=None, text=None, thread=None):
@@ -82,7 +82,7 @@ async def update_repository(client, message, repo_url, repo_type):
         except:
             pass
         
-        await message.edit(get_text("restarter", "updating", LANGUAGES=LANGUAGES, repo_type=repo_type))
+        await message.edit(locale.get_text("restarter", "updating", repo_type=repo_type))
 
         wget.download(repo_url, 'temp/archive.zip')
 
@@ -107,12 +107,12 @@ async def update_repository(client, message, repo_url, repo_type):
         os.remove("temp/archive.zip")
         shutil.rmtree(f"temp/{root_folder}")
         
-        await message.edit(get_text("restarter", "update_success", LANGUAGES=LANGUAGES))
+        await message.edit(locale.get_text("restarter", "update_success"))
         await restart(message, restart_type="update")
         
     except Exception as e:
         error_traceback = traceback.format_exc()
-        error_message = get_text("restarter", "error_occurred", LANGUAGES=LANGUAGES, error=str(e))
+        error_message = locale.get_text("restarter", "error_occurred", error=str(e))
 
         if len(error_message) > 4000:
             error_message = error_message[:4000] + "..."
@@ -125,10 +125,10 @@ async def update_repository(client, message, repo_url, repo_type):
 async def restart_get(client, message):
     message = await who_message(client, message)
     try:
-        await message.edit(get_text("restarter", "restarting", LANGUAGES=LANGUAGES))
+        await message.edit(locale.get_text("restarter", "restarting"))
         await restart(message, restart_type="restart")
     except:
-        await message.edit(get_text("restarter", "restart_error", LANGUAGES=LANGUAGES))
+        await message.edit(locale.get_text("restarter", "restart_error"))
 
 
 # Update main

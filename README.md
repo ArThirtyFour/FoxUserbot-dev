@@ -36,9 +36,8 @@
 ```python3
 # -*- coding: utf-8 -*-
 import os
-from pyrogram import Client, filters
-from command import fox_command, fox_sudo, who_message, get_text
-
+from pyrogram import Client
+from command import Locale , fox_command, fox_sudo, who_message
 filename = os.path.basename(__file__)
 Module_Name = 'Example'
 
@@ -71,41 +70,35 @@ Module_Name = 'Example'
 #        ^^^ enter the need data
 
 
-LANGUAGES = {
-    "en": {
-        "simple_text": "🦊 <b>This is a simple example module</b>",
-        "text_with_var": "🎯 <b>Hello {name}! Module working.</b>"
-    },
-    "ru": {
-        "simple_text": "🦊 <b>Это простой пример модуля</b>", 
-        "text_with_var": "🎯 <b>Привет {name}! Модуль работает.</b>"
-    },
-    "ua": {
-        "simple_text": "🦊 <b>Це простий приклад модуля</b>",
-        "text_with_var": "🎯 <b>Привіт {name}! Модуль працює.</b>"
-    }
+en_strings = {
+    'simple_text': '🦊 <b>This is a simple example module</b>',
+    'text_with_var': '🎯 <b>Hello {name}! Module working.</b>'
 }
+ru_strings = {
+    'simple_text': '🦊 <b>Это простой пример модуля</b>',
+    'text_with_var': '🎯 <b>Привет {name}! Модуль работает.</b>'
+}
+ua_strings = {
+    'simple_text': '🦊 <b>Це простий приклад модуля</b>',
+    'text_with_var': '🎯 <b>Привіт {name}! Модуль працює.</b>'
+}
+locale = Locale(en=en_strings, ru=ru_strings, ua=ua_strings)
 
-# fox_command(command, module_name, filename=os.path.basename(__file__), "[Arguments]")
+
 @Client.on_message(fox_command("example", Module_Name, filename) & fox_sudo())
 async def example_simple(client, message):
     message = await who_message(client, message)
-    
-    # Simple edit without variable
-    text = get_text("example", "simple_text", LANGUAGES=LANGUAGES)
+    text = locale.get_text("example", "simple_text")
     await message.edit(text)
 
 @Client.on_message(fox_command("example_hello", Module_Name, filename, "[name]") & fox_sudo())
 async def example_with_var(client, message):
     message = await who_message(client, message)
-    
-    # Get variable (if none: = user)
     args = message.text.split()
     name = args[1] if len(args) > 1 else "User"
-    
-    # Text with variable
-    text = get_text("example", "text_with_var", LANGUAGES=LANGUAGES, name=name)
+    text = locale.get_text("example", "text_with_var", name=name)
     await message.edit(text)
+
 ```
 
 <h2>How to add Hikka/Heroku modules?</h2>

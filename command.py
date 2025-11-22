@@ -3,21 +3,15 @@ import json
 import os
 from pathlib import Path
 from typing import List, Union
-
 from pyrogram import filters
 from pyrogram.types import ReplyParameters
-
 from modules.core.settings.main_settings import add_command_help, file_list
 
-#* language ===================
-all_lang = ["en", "ru", "ua"]
-default_lang = "en"
-#* ============================
 
 _PREFIX = None
 _GLOBAL_LANG = None
 
-# prefix
+
 def my_prefix():
     global _PREFIX
     if _PREFIX is not None:
@@ -110,74 +104,95 @@ def fox_command(
     return filters.command(all_commands, prefixes=my_prefix())
 
 
-# language
-def get_global_lang() -> str:
-    global _GLOBAL_LANG
-    if _GLOBAL_LANG is not None:
-        return _GLOBAL_LANG
-        
-    lang_config_path = Path("userdata/language.ini")
-    Path("userdata").mkdir(exist_ok=True)
-    
-    if lang_config_path.exists():
-        config = configparser.ConfigParser()
-        config.read(lang_config_path)
-        try:
-            lang = config.get("language", "lang", fallback=default_lang)
-            lang = lang.lower()
-            if lang in all_lang:
-                _GLOBAL_LANG = lang
-                return _GLOBAL_LANG
-        except:
-            pass
-    
-    _GLOBAL_LANG = default_lang
-    return _GLOBAL_LANG
+class Locale():
 
+    all_lang = ["en", "ru", "ua"]
+    default_lang = "en"
+    _GLOBAL_LANG = None
+    _instance = None
 
-def set_global_lang(lang: str) -> bool:
-    global _GLOBAL_LANG
-    
-    if lang in all_lang:
-        _GLOBAL_LANG = lang
-        
+    def __init__(self, **languages):
+
+        self.languages = {}
+        for code, bundle in (languages or {}).items():
+            if isinstance(bundle, dict):
+                self.languages[code.lower()] = bundle
+    def set_global_lang(self, lang: str) -> bool:
+        if lang not in self.all_lang:
+            return False
+
+        self._GLOBAL_LANG = lang
         lang_config_path = Path("userdata/language.ini")
         lang_config_path.parent.mkdir(exist_ok=True)
-        
+
         config = configparser.ConfigParser()
         if lang_config_path.exists():
             config.read(lang_config_path)
-        
+
         if not config.has_section("language"):
             config.add_section("language")
         config.set("language", "lang", lang)
-        
+
         with open(lang_config_path, "w") as f:
             config.write(f)
-        
+
         return True
-    return False
-
-
-def get_module_text(key: str, LANGUAGES: dict, **kwargs) -> str:
     
-    lang = get_global_lang()
-    text = LANGUAGES.get(lang, LANGUAGES["en"]).get(key, key)
+    def get_available_langs(self) -> list:
+        return self.all_lang
     
-    text = text.replace("\n", """
-""")
-    if kwargs:
-        text = text.format(**kwargs)
-    return text
+    def get_text(self, module: str, key: str, LANGUAGES: dict = None, **kwargs) -> str:
+        bundles = LANGUAGES if LANGUAGES is not None else getattr(self, "languages", {})
+        if bundles:
+            return self.get_module_text(key, bundles, **kwargs)
+        return key
+    
+    def get_module_text(self, key: str, LANGUAGES: dict, **kwargs) -> str:
+        lang = self.get_global_lang()
+        bundle = LANGUAGES.get(lang) or LANGUAGES.get("en", {})
+        text = bundle.get(key, key)
+        if kwargs:
+            text = text.format(**kwargs)
+        return text
 
+    def get_global_lang(self) -> str:
+        if self._GLOBAL_LANG is not None:
+            return self._GLOBAL_LANG
+
+        lang_config_path = Path("userdata/language.ini")
+        Path("userdata").mkdir(exist_ok=True)
+
+        if lang_config_path.exists():
+            config = configparser.ConfigParser()
+            config.read(lang_config_path)
+            try:
+                lang = config.get("language", "lang", fallback=self.default_lang)
+                lang = lang.lower()
+                if lang in self.all_lang:
+                    self._GLOBAL_LANG = lang
+                    return self._GLOBAL_LANG
+            except Exception:
+                pass
+
+        self._GLOBAL_LANG = self.default_lang
+        return self._GLOBAL_LANG
+
+
+temp_locale = Locale()
+all_lang = Locale.all_lang
+
+def get_global_lang() -> str:
+    return temp_locale.get_global_lang()
+
+def set_global_lang(lang: str) -> bool:
+    return temp_locale.set_global_lang(lang)
 
 def get_text(module: str, key: str, LANGUAGES: dict = None, **kwargs) -> str:
-    if LANGUAGES:
-        return get_module_text(key, LANGUAGES, **kwargs)
-    return key
-
+    return temp_locale.get_text(module, key, LANGUAGES, **kwargs)
 
 def get_available_langs() -> list:
-    return all_lang
+    return temp_locale.get_available_langs()
 
-_ = get_global_lang()
+def configure_locale(**languages):
+    temp_locale.configure(**languages)
+

@@ -6,35 +6,35 @@ from importlib.machinery import SourceFileLoader
 import wget
 from pyrogram import Client
 
-from command import fox_command, fox_sudo, who_message, get_text
+from command import Locale, fox_command, fox_sudo, who_message
 from modules.core.plugin_validator import PluginValidator
 
 filename = os.path.basename(__file__)
 Module_Name = 'Loadmod'
 
-LANGUAGES = {
-    "en": {
-        "checking": "<emoji id='5190903199137013741'>🔍</emoji> <b>Checking and loading module</b>",
-        "validation_failed": "<emoji id='5210952531676504517'>❌</emoji> <b>Plugin validation failed</b>\n<code>{error}</code>",
-        "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Specify a link, reply with a .py file, or module name</b>",
-        "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Module {module_name} loaded successfully!</b>",
-        "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Error while loading</b>\n<code>{error}</code>"
-    },
-    "ru": {
-        "checking": "<emoji id='5190903199137013741'>🔍</emoji> <b>Проверка и загрузка модуля</b>",
-        "validation_failed": "<emoji id='5210952531676504517'>❌</emoji> <b>Ошибка валидации плагина</b>\n<code>{error}</code>",
-        "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Укажите ссылку, ответьте файлом .py или названием модуля</b>",
-        "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Модуль {module_name} успешно загружен!</b>",
-        "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Ошибка при загрузке</b>\n<code>{error}</code>"
-    },
-    "ua": {
-        "checking": "<emoji id='5190903199137013741'>🔍</emoji> <b>Перевірка та завантаження модуля</b>",
-        "validation_failed": "<emoji id='5210952531676504517'>❌</emoji> <b>Помилка валідації плагіна</b>\n<code>{error}</code>",
-        "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Вкажіть посилання, відповісте на .py або назвіть модуль</b>",
-        "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Модуль {module_name} успішно завантажено!</b>",
-        "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Помилка завантаження</b>\n<code>{error}</code>"
-    }
+en_strings = {
+    "checking": "<emoji id='5190903199137013741'>🔍</emoji> <b>Checking and loading module</b>",
+    "validation_failed": "<emoji id='5210952531676504517'>❌</emoji> <b>Plugin validation failed</b>\n<code>{error}</code>",
+    "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Specify a link, reply with a .py file, or module name</b>",
+    "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Module {module_name} loaded successfully!</b>",
+    "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Error while loading</b>\n<code>{error}</code>"
 }
+ru_strings = {
+    "checking": "<emoji id='5190903199137013741'>🔍</emoji> <b>Проверка и загрузка модуля</b>",
+    "validation_failed": "<emoji id='5210952531676504517'>❌</emoji> <b>Ошибка валидации плагина</b>\n<code>{error}</code>",
+    "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Укажите ссылку, ответьте файлом .py или названием модуля</b>",
+    "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Модуль {module_name} успешно загружен!</b>",
+    "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Ошибка при загрузке</b>\n<code>{error}</code>"
+}
+ua_strings = {
+    "checking": "<emoji id='5190903199137013741'>🔍</emoji> <b>Перевірка та завантаження модуля</b>",
+    "validation_failed": "<emoji id='5210952531676504517'>❌</emoji> <b>Помилка валідації плагіна</b>\n<code>{error}</code>",
+    "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Вкажіть посилання, відповісте на .py або назвіть модуль</b>",
+    "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Модуль {module_name} успішно завантажено!</b>",
+    "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Помилка завантаження</b>\n<code>{error}</code>"
+}
+
+locale = Locale(en=en_strings, ru=ru_strings, ua=ua_strings)
 
 
 def _iter_plugin_handlers(module):
@@ -83,7 +83,7 @@ def _load_module_handlers(client: Client, module_qualname: str):
 @Client.on_message(fox_command("loadmod", Module_Name, filename, "[link to the module/reply]") & fox_sudo())
 async def loadmod(client, message):
     message = await who_message(client, message)
-    checking_text = get_text("loadmod", "checking", LANGUAGES=LANGUAGES)
+    checking_text = locale.get_text("loadmod", "checking")
     await message.edit(checking_text)
     
     validator = PluginValidator()
@@ -105,7 +105,7 @@ async def loadmod(client, message):
             success, final_path, error_message = validator.validate_and_convert_plugin(temp_file, original_filename)
             
             if not success:
-                error_text = get_text("loadmod", "validation_failed", LANGUAGES=LANGUAGES, error=error_message)
+                error_text = locale.get_text("loadmod", "validation_failed", error=error_message)
                 await message.edit(error_text)
                 return
                 
@@ -120,7 +120,7 @@ async def loadmod(client, message):
             success, final_path, error_message = validator.validate_and_convert_plugin(temp_file, original_filename)
             
             if not success:
-                error_text = get_text("loadmod", "validation_failed", LANGUAGES=LANGUAGES, error=error_message)
+                error_text = locale.get_text("loadmod", "validation_failed", error=error_message)
                 await message.edit(error_text)
                 return
                 
@@ -132,7 +132,7 @@ async def loadmod(client, message):
             filename_var = arg if arg.endswith('.py') else f"{arg}.py"
             
         if not filename_var:
-            no_module_text = get_text("loadmod", "no_module", LANGUAGES=LANGUAGES)
+            no_module_text = locale.get_text("loadmod", "no_module")
             await message.edit(no_module_text)
             return
             
@@ -141,9 +141,9 @@ async def loadmod(client, message):
         _remove_module_handlers(client, module_qualname)
         _load_module_handlers(client, module_qualname)
 
-        success_text = get_text("loadmod", "success", LANGUAGES=LANGUAGES, module_name=module_stem)
+        success_text = locale.get_text("loadmod", "success", module_name=module_stem)
         await message.edit(success_text)
         
     except Exception as error:
-        error_text = get_text("loadmod", "error", LANGUAGES=LANGUAGES, error=str(error))
+        error_text = locale.get_text("loadmod", "error", error=str(error))
         await message.edit(error_text)

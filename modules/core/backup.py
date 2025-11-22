@@ -8,19 +8,18 @@ from pathlib import Path
 
 from pyrogram import Client
 
-from command import fox_command, fox_sudo, who_message, get_text
+from command import Locale , fox_command, fox_sudo, who_message
 from modules.core.restarter import restart
 from modules.core.settings.main_settings import version
 
-# backup_dirs
 BACKUP_PATHS = [
     'userdata',
     'triggers', 
     'modules/loaded'
 ]
 
-LANGUAGES = {
-    "en": {
+
+locale_en = {
         "need_reply": "<b><emoji id='5210952531676504517'>❌</emoji> Need to reply to a message with a backup archive!</b>",
         "invalid_archive": "<b><emoji id='5210952531676504517'>❌</emoji> Invalid backup archive!</b>",
         "restored": "<b><emoji id='5237699328843200968'>✅</emoji> Data restored successfully!</b>",
@@ -35,8 +34,8 @@ LANGUAGES = {
 <emoji id='5283051451889756068'>🦊</emoji> | Only for FoxUserbot
 <emoji id='5296369303661067030'>🔒</emoji> | Version: {version}
 <emoji id='5271604874419647061'>🔗</emoji> | https://github.com/FoxUserbot/FoxUserbot"""
-    },
-    "ru": {
+    }
+locale_ru = {
         "need_reply": "<b><emoji id='5210952531676504517'>❌</emoji> Нужно ответить на сообщение с архивом бэкапа!</b>",
         "invalid_archive": "<b><emoji id='5210952531676504517'>❌</emoji> Неверный архив бэкапа!</b>",
         "restored": "<b><emoji id='5237699328843200968'>✅</emoji> Данные успешно восстановлены!</b>",
@@ -51,8 +50,8 @@ LANGUAGES = {
 <emoji id='5283051451889756068'>🦊</emoji> | Только для FoxUserbot
 <emoji id='5296369303661067030'>🔒</emoji> | Версия: {version}
 <emoji id='5271604874419647061'>🔗</emoji> | https://github.com/FoxUserbot/FoxUserbot"""
-    },
-    "ua": {
+    }
+locale_ua = {
         "need_reply": "<b><emoji id='5210952531676504517'>❌</emoji> Потрібно відповісти на повідомлення з архівом бекапу!</b>",
         "invalid_archive": "<b><emoji id='5210952531676504517'>❌</emoji> Невірний архів бекапу!</b>",
         "restored": "<b><emoji id='5237699328843200968'>✅</emoji> Дані успішно відновлено!</b>",
@@ -68,7 +67,8 @@ LANGUAGES = {
 <emoji id='5296369303661067030'>🔒</emoji> | Версія: {version}
 <emoji id='5271604874419647061'>🔗</emoji> | https://github.com/FoxUserbot/FoxUserbot"""
     }
-}
+
+locale = Locale(en=locale_en, ru=locale_ru, ua=locale_ua)
 
 async def create_backup() -> str:
     def exclude_sudo_users(tarinfo):
@@ -87,7 +87,7 @@ async def create_backup() -> str:
 
 async def restore_backup(client, message):
     if not message.reply_to_message or not message.reply_to_message.document:
-        need_reply_text = get_text("backup", "need_reply", LANGUAGES=LANGUAGES)
+        need_reply_text = locale.get_text("backup", "need_reply")
         await message.edit(need_reply_text)
         return False
 
@@ -98,7 +98,7 @@ async def restore_backup(client, message):
             with tarfile.open(download_path, 'r:gz') as test_tar:
                 test_tar.getmembers()
         except:
-            invalid_text = get_text("backup", "invalid_archive", LANGUAGES=LANGUAGES)
+            invalid_text = locale.get_text("backup", "invalid_archive")
             await message.edit(invalid_text)
             return False
         
@@ -112,12 +112,12 @@ async def restore_backup(client, message):
         with tarfile.open(download_path, 'r:gz') as tar:
             tar.extractall()
         
-        restored_text = get_text("backup", "restored", LANGUAGES=LANGUAGES)
+        restored_text = locale.get_text("backup", "restored")
         await message.edit(restored_text)
         return True
         
     except Exception as e:
-        error_text = get_text("backup", "restore_error", LANGUAGES=LANGUAGES, error=str(e))
+        error_text = locale.get_text("backup", "restore_error", error=str(e))
         await message.edit(error_text)
         return False
     finally:
@@ -129,17 +129,17 @@ async def backup_command(client, message):
     message = await who_message(client, message)
     backup_file = None
     try:
-        creating_text = get_text("backup", "creating", LANGUAGES=LANGUAGES)
+        creating_text = locale.get_text("backup", "creating")
+        print(creating_text)
         msg = await message.edit(creating_text)
         backup_file = await create_backup()
         
         if os.path.getsize(backup_file) == 0:
-            empty_text = get_text("backup", "empty_file", LANGUAGES=LANGUAGES)
+            empty_text = locale.get_text("backup", "empty_file")
             await message.edit(empty_text)
             return
         
-        caption_text = get_text("backup", "caption", LANGUAGES=LANGUAGES, 
-                               filename=Path(backup_file).name, version=version)
+        caption_text = locale.get_text("backup", "caption", filename=Path(backup_file).name, version=version)
         
         await client.send_document(
             chat_id=message.chat.id,
@@ -150,7 +150,7 @@ async def backup_command(client, message):
         await msg.delete()
         
     except Exception as e:
-        error_text = get_text("backup", "backup_error", LANGUAGES=LANGUAGES, error=str(e))
+        error_text = locale.get_text("backup", "backup_error", error=str(e))
         await message.edit(error_text)
         
     finally:
@@ -161,13 +161,13 @@ async def backup_command(client, message):
 async def restore_command(client, message):
     message = await who_message(client, message)
     try:
-        ready_text = get_text("backup", "ready_restore", LANGUAGES=LANGUAGES)
+        ready_text = locale.get_text("backup", "ready_restore")
         await message.edit(ready_text)
         success = await restore_backup(client, message)
         if success:
             await restart(message, restart_type="restart")
     except Exception as e:
-        error_text = get_text("backup", "restore_error", LANGUAGES=LANGUAGES, error=str(e))
+        error_text = locale.get_text("backup", "restore_error", error=str(e))
         await message.edit(error_text)
 
 @Client.on_message(fox_command("backup_modules", "Backup", os.path.basename(__file__)) & fox_sudo())
@@ -175,7 +175,7 @@ async def backup_modules_command(client, message):
     message = await who_message(client, message)
     backup_file = None
     try:
-        creating_text = get_text("backup", "creating_modules", LANGUAGES=LANGUAGES)
+        creating_text = locale.get_text("backup", "creating_modules")
         msg = await message.edit(creating_text)
         
         with tempfile.NamedTemporaryFile(suffix='_FoxUB_Modules_Backup.tar.gz', delete=False) as tmp:
@@ -185,12 +185,11 @@ async def backup_modules_command(client, message):
             backup_file = tmp.name
         
         if os.path.getsize(backup_file) == 0:
-            empty_text = get_text("backup", "empty_file", LANGUAGES=LANGUAGES)
+            empty_text = locale.get_text("backup", "empty_file")
             await message.edit(empty_text)
             return
         
-        caption_text = get_text("backup", "caption", LANGUAGES=LANGUAGES,
-                               filename=Path(backup_file).name, version=version)
+        caption_text = locale.get_text("backup", "caption", filename=Path(backup_file).name, version=version)
         
         await client.send_document(
             chat_id=message.chat.id,
@@ -201,7 +200,7 @@ async def backup_modules_command(client, message):
         await msg.delete()
         
     except Exception as e:
-        error_text = get_text("backup", "modules_error", LANGUAGES=LANGUAGES, error=str(e))
+        error_text = locale.get_text("backup", "modules_error", error=str(e))
         await message.edit(error_text)
         
     finally:

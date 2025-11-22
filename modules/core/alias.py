@@ -6,13 +6,12 @@ from typing import Dict, List
 
 from pyrogram import Client
 
-from command import fox_command, fox_sudo, who_message, get_text, my_prefix
+from command import Locale , fox_command, fox_sudo, who_message, my_prefix 
 from modules.core.restarter import restart
 
 ALIASES_DB_PATH = "userdata/command_aliases.json"
 
-LANGUAGES = {
-    "en": {
+en_strings = {
         "help": """<emoji id='5283051451889756068'>🦊</emoji> <b>Manager:</b>
 <code>{prefix}alias add h help</code> - add alias
 <code>{prefix}alias del h</code> - delete alias
@@ -23,8 +22,8 @@ LANGUAGES = {
         "alias_not_found": "<emoji id='5210952531676504517'>❌</emoji> | Alias not found",
         "no_aliases": "<emoji id='5278753302023004775'>ℹ️</emoji> | Aliases not specified",
         "list_title": "<emoji id='5283051451889756068'>🦊</emoji> <b>List aliases:</b>\n{aliases_list}"
-    },
-    "ru": {
+    }
+ru_strings = {
         "help": """<emoji id='5283051451889756068'>🦊</emoji> <b>Менеджер:</b>
 <code>{prefix}alias add h help</code> - добавить алиас
 <code>{prefix}alias del h</code> - удалить алиас
@@ -35,8 +34,8 @@ LANGUAGES = {
         "alias_not_found": "<emoji id='5210952531676504517'>❌</emoji> | Алиас не найден",
         "no_aliases": "<emoji id='5278753302023004775'>ℹ️</emoji> | Алиасы не указаны",
         "list_title": "<emoji id='5283051451889756068'>🦊</emoji> <b>Список алиасов:</b>\n{aliases_list}"
-    },
-    "ua": {
+    }  
+ua_strings = {
         "help": """<emoji id='5283051451889756068'>🦊</emoji> <b>Менеджер:</b>
 <code>{prefix}alias add h help</code> - додати аліас
 <code>{prefix}alias del h</code> - видалити аліас
@@ -48,7 +47,7 @@ LANGUAGES = {
         "no_aliases": "<emoji id='5278753302023004775'>ℹ️</emoji> | Аліаси не вказані",
         "list_title": "<emoji id='5283051451889756068'>🦊</emoji> <b>Список аліасів:</b>\n{aliases_list}"
     }
-}
+locale = Locale(en=en_strings, ru=ru_strings, ua=ua_strings)
 
 class AliasManager:
     def __init__(self):
@@ -106,31 +105,31 @@ async def handle_aliases(client, message):
         await show_help(message)
 
 async def show_help(message):
-    help_text = get_text("alias", "help", LANGUAGES=LANGUAGES, prefix=my_prefix())
+    help_text = locale.get_text("alias", "help", prefix=my_prefix())
     await message.edit(help_text)
 
 async def add_alias(message, alias: str, command: str):
     if alias in alias_manager.aliases:
-        exists_text = get_text("alias", "alias_exists", LANGUAGES=LANGUAGES, alias=alias)
+        exists_text = locale.get_text("alias", "alias_exists", alias=alias)
         await message.edit(exists_text)
     else:
         alias_manager.add_alias(alias, command)
-        added_text = get_text("alias", "alias_added", LANGUAGES=LANGUAGES, alias=alias, command=command)
+        added_text = locale.get_text("alias", "alias_added", alias=alias, command=command)
         await message.edit(added_text)
         await restart(message, restart_type="restart")
 
 async def remove_alias(message, alias: str):
     if alias_manager.remove_alias(alias):
-        deleted_text = get_text("alias", "alias_deleted", LANGUAGES=LANGUAGES, alias=alias)
+        deleted_text = locale.get_text("alias", "alias_deleted", alias=alias)
         await message.edit(deleted_text)
         await restart(message, restart_type="restart")
     else:
-        not_found_text = get_text("alias", "alias_not_found", LANGUAGES=LANGUAGES)
+        not_found_text = locale.get_text("alias", "alias_not_found")
         await message.edit(not_found_text)
 
 async def list_aliases(message):
     if not alias_manager.aliases:
-        no_aliases_text = get_text("alias", "no_aliases", LANGUAGES=LANGUAGES)
+        no_aliases_text = locale.get_text("alias", "no_aliases")
         await message.edit(no_aliases_text)
         return
     
@@ -139,5 +138,5 @@ async def list_aliases(message):
         for alias, cmd in alias_manager.aliases.items()
     )
 
-    list_text = get_text("alias", "list_title", LANGUAGES=LANGUAGES, aliases_list=aliases_list)
+    list_text = locale.get_text("alias", "list_title", aliases_list=aliases_list)
     await message.edit(list_text)

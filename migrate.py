@@ -1,6 +1,9 @@
+# ТУТ VERY BIG VIBECODE МНЕ ПОХУЙ ДРОЧИ МАНГО НОГАМИ Я ВЫГЛЯЖУ КАК ТЕТО ТРАХЕР
+
 import os
 import re
-from pathlib import Path
+import ast
+import pprint
 
 def convert_module_new_format(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -125,19 +128,131 @@ def convert_module_filters_me(file_path):
         f.write(content)
 
 
+def convert_locales(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        if 'LANGUAGES' not in content:
+            new_content = _rewrite_get_text_calls(content)
+            if new_content != content:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+            return
+
+        tree = ast.parse(content)
+        lang_assign = None
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                for tgt in node.targets:
+                    if isinstance(tgt, ast.Name) and tgt.id == 'LANGUAGES':
+                        if isinstance(node.value, ast.Dict):
+                            lang_assign = node
+                            break
+            if lang_assign:
+                break
+
+        if not lang_assign:
+            new_content = _rewrite_get_text_calls(content)
+            if new_content != content:
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+            return
+
+        start_line = lang_assign.lineno - 1
+        start_col = lang_assign.col_offset
+        end_line = getattr(lang_assign, 'end_lineno', None)
+        end_col = getattr(lang_assign, 'end_col_offset', None)
+        lines = content.splitlines(True)
+        if end_line is None or end_col is None:
+            start_idx = sum(len(l) for l in lines[:start_line]) + start_col
+            snippet = content[start_idx:]
+            brace = 0
+            end_idx = None
+            for i, ch in enumerate(snippet):
+                if ch == '{':
+                    brace += 1
+                elif ch == '}':
+                    brace -= 1
+                    if brace == 0:
+                        end_idx = i + 1
+                        break
+            if end_idx is None:
+                return
+            assign_text = content[start_idx:start_idx + end_idx]
+            assign_start = start_idx
+            assign_end = start_idx + end_idx
+        else:
+            assign_start = sum(len(l) for l in lines[:start_line]) + start_col
+            assign_end = sum(len(l) for l in lines[:end_line - 1]) + end_col
+            assign_text = content[assign_start:assign_end]
+
+        try:
+            eq_pos = assign_text.find('=')
+            rhs = assign_text[eq_pos + 1:].strip()
+            lang_dict = ast.literal_eval(rhs)
+            if not isinstance(lang_dict, dict):
+                return
+        except Exception:
+            return
+
+        ordered_codes = [code for code in ['en', 'ru', 'ua'] if code in lang_dict] + [code for code in lang_dict.keys() if code not in ('en', 'ru', 'ua')]
+        lang_blocks = []
+        for code in ordered_codes:
+            block = f"{code}_strings = {pprint.pformat(lang_dict[code], width=120, compact=False)}\n"
+            lang_blocks.append(block)
+        lang_code = ''.join(lang_blocks) + f"locale = Locale({', '.join([f'{code}={code}_strings' for code in ordered_codes])})\n"
+
+        content2 = content[:assign_start] + lang_code + content[assign_end:]
+
+        if 'from command import Locale' not in content2:
+            if re.search(r'^from\s+command\s+import\s+.*$', content2, flags=re.MULTILINE):
+                content2 = re.sub(
+                    r'^(from\s+command\s+import\s+)(.*)$',
+                    lambda m: m.group(1) + (m.group(2) + ', Locale' if 'Locale' not in m.group(2) else m.group(2)),
+                    content2,
+                    count=1,
+                    flags=re.MULTILINE,
+                )
+            else:
+                lines2 = content2.splitlines(True)
+                insert_pos = 0
+                for i, line in enumerate(lines2):
+                    if line.startswith(('from ', 'import ')) or not line.strip():
+                        insert_pos = i + 1
+                    else:
+                        break
+                lines2.insert(insert_pos, 'from command import Locale\n')
+                content2 = ''.join(lines2)
+
+        content3 = _rewrite_get_text_calls(content2)
+
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content3)
+        print(f"Locales converted in {file_path}")
+    except Exception as e:
+        print(f"Locales conversion failed for {file_path}: {e}")
+
+
+def _rewrite_get_text_calls(content: str) -> str:
+    s = content
+    s = re.sub(r'\bLocale\.get_text\s*\(', 'locale.get_text(', s)
+    s = re.sub(r'(?<!\.)\bget_text\s*\(', 'locale.get_text(', s)
+    s = re.sub(r',\s*LANGUAGES\s*=\s*LANGUAGES', '', s)
+    s = re.sub(r'\(\s*LANGUAGES\s*=\s*LANGUAGES\s*,\s*', '(', s)
+    s = re.sub(r'\(\s*LANGUAGES\s*=\s*LANGUAGES\s*\)', '()', s)
+    return s
+
 def check_duplicate(folder_path):
     for filename in os.listdir(folder_path):
         file_path = os.path.join(folder_path, filename)
         
-        # Пропускаем папки и не .py файлы
+
         if not os.path.isfile(file_path) or not filename.endswith('.py'):
             continue
-        
-        # Заменяем пробелы на _ и удаляем все скобки
+
         new_name = re.sub(r'[()]', '', filename.replace(' ', '_'))
-        
-        
-        # Переименовываем только если имя изменилось
+
         if new_name != filename:
             new_path = os.path.join(folder_path, new_name)
             try:
@@ -154,6 +269,7 @@ def process_modules_directory(directory):
                 file_path = os.path.join(root, file)
                 convert_module_new_format(file_path)
                 convert_module_filters_me(file_path)
+                convert_locales(file_path)
     check_duplicate(directory)
 
 def convert_modules():

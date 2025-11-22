@@ -7,16 +7,15 @@ from datetime import datetime
 from pathlib import Path
 from platform import python_version, release, system, uname
 
-from command import fox_command, fox_sudo, who_message, get_text
+from command import Locale, fox_command, fox_sudo, who_message
 from modules.core.uptime import bot_start_time
 from pyrogram import Client, __version__
 
 DEFAULT_INFO_IMAGE = "https://raw.githubusercontent.com/FoxUserbot/FoxUserbot/refs/heads/main/photos/FoxUB_info.jpg"
 THEME_PATH = "userdata/theme.ini"
 
-LANGUAGES = {
-    "en": {
-        "default_text": """
+en_strings = {
+    "default_text": """
 <emoji id="5190875290439525089">🦊</emoji><b> | FoxUserbot INFO</b>
 <emoji id="5372878077250519677">🐍</emoji><b> | Python: {python_version}</b>
 <emoji id="5190637731503415052">🥧</emoji><b> | Kurigram: {pyrogram_version}</b>
@@ -35,9 +34,9 @@ LANGUAGES = {
 <emoji id="5359480394922082925">🖼</emoji> | <b>Designer:</b>
 <emoji id="5330237710655306682">📞</emoji> | <a href="https://t.me/nw_off">Nw_Off</a>
 """
-    },
-    "ru": {
-        "default_text": """
+}
+ru_strings = {
+    "default_text": """
 <emoji id="5190875290439525089">🦊</emoji><b> | FoxUserbot ИНФО</b>
 <emoji id="5372878077250519677">🐍</emoji><b> | Python: {python_version}</b>
 <emoji id="5190637731503415052">🥧</emoji><b> | Kurigram: {pyrogram_version}</b>
@@ -56,9 +55,9 @@ LANGUAGES = {
 <emoji id="5359480394922082925">🖼</emoji> | <b>Дизайнер:</b>
 <emoji id="5330237710655306682">📞</emoji> | <a href="https://t.me/nw_off">Nw_Off</a>
 """
-    },
-    "ua": {
-        "default_text": """
+}
+ua_strings = {
+    "default_text": """
 <emoji id="5190875290439525089">🦊</emoji><b> | FoxUserbot ІНФО</b>
 <emoji id="5372878077250519677">🐍</emoji><b> | Python: {python_version}</b>
 <emoji id="5190637731503415052">🥧</emoji><b> | Kurigram: {pyrogram_version}</b>
@@ -77,8 +76,9 @@ LANGUAGES = {
 <emoji id="5359480394922082925">🖼</emoji> | <b>Дизайнер:</b>
 <emoji id="5330237710655306682">📞</emoji> | <a href="https://t.me/nw_off">Nw_Off</a>
 """
-    }
 }
+
+locale = Locale(en=en_strings, ru=ru_strings, ua=ua_strings)
 
 def linux_distro():
     # /etc/os-release 
@@ -313,7 +313,7 @@ def get_info_text(message):
         except Exception as e:
             pass
     
-    default_text = get_text("info", "default_text", LANGUAGES=LANGUAGES)
+    default_text = locale.get_text("info", "default_text")
     return default_text.format(
         python_version=python_version(),
         pyrogram_version=__version__,

@@ -8,7 +8,7 @@ from pathlib import Path
 from pyrogram import Client
 from telegraph import Telegraph
 
-from command import fox_command, fox_sudo, who_message, get_text, my_prefix
+from command import Locale , fox_command, fox_sudo, who_message, my_prefix
 from modules.core.settings.main_settings import module_list, version
 
 # Default
@@ -18,8 +18,7 @@ CACHE_DIR = "temp"
 CACHE_CONTENT_FILE = os.path.join(CACHE_DIR, "help_content.txt")
 CACHE_LINK_FILE = os.path.join(CACHE_DIR, "help_link.txt")
 
-LANGUAGES = {
-    "en": {
+strings_en = {
         "loading": "Loading the help menu...",
         "commands_list": "⬆️ | List of all commands.",
         "default_text": """
@@ -29,8 +28,8 @@ LANGUAGES = {
 <emoji id="5444856076954520455">🔒</emoji><b> | Prefix: {prefix}</b>
 <emoji id="5436113877181941026">❓</emoji><a href="{commands_link}"><b> | List of all commands. </b></a>
 """
-    },
-    "ru": {
+    }
+strings_ru = {
         "loading": "Загрузка меню помощи...",
         "commands_list": "⬆️ | Список всех команд.",
         "default_text": """
@@ -40,8 +39,8 @@ LANGUAGES = {
 <emoji id="5444856076954520455">🔒</emoji><b> | Префикс: {prefix}</b>
 <emoji id="5436113877181941026">❓</emoji><a href="{commands_link}"><b> | Список всех команд. </b></a>
 """
-    },
-    "ua": {
+    }
+strings_ua = {
         "loading": "Завантаження меню допомоги...",
         "commands_list": "⬆️ | Список усіх команд.",
         "default_text": """
@@ -52,7 +51,8 @@ LANGUAGES = {
 <emoji id="5436113877181941026">❓</emoji><a href="{commands_link}"><b> | Список усіх команд. </b></a>
 """
     }
-}
+
+locale = Locale(en=strings_en, ru=strings_ru, ua=strings_ua)
 
 def get_help_image():
     if not Path(THEME_PATH).exists():
@@ -186,7 +186,7 @@ def get_help_text():
         except Exception as e:
             pass
     
-    default_text = get_text("help", "default_text", LANGUAGES=LANGUAGES)
+    default_text = locale.get_text("help", "default_text")
     text = default_text.format(
         version=version,
         modules_count=len(module_list),
@@ -201,7 +201,7 @@ async def helps(client, message):
     html_file_path = None
     try:
         image_url = get_help_image()
-        loading_text = get_text("help", "loading", LANGUAGES=LANGUAGES)
+        loading_text = locale.get_text("help", "loading")
         
         if image_url.split(".")[-1].lower() in ["mp4", "mov", "avi", "mkv", "webm"]:
             da = await client.send_video(
@@ -230,7 +230,7 @@ async def helps(client, message):
         await client.edit_message_caption(message.chat.id, da.id, caption)
         
         if html_file_path:
-            commands_list_text = get_text("help", "commands_list", LANGUAGES=LANGUAGES)
+            commands_list_text = locale.get_text("help", "commands_list")
             await client.send_document(
                 message.chat.id,
                 document=html_file_path,
@@ -252,7 +252,7 @@ async def helps(client, message):
             await client.edit_message_caption(message.chat.id, da.id, caption)
             
             if html_file_path:
-                commands_list_text = get_text("help", "commands_list", LANGUAGES=LANGUAGES)
+                commands_list_text = locale.get_text("help", "commands_list")
                 await client.send_document(
                     message.chat.id,
                     document=html_file_path,
@@ -274,7 +274,7 @@ async def helps(client, message):
                 await client.edit_message_caption(message.chat.id, da.id, caption)
                 
                 if html_file_path:
-                    commands_list_text = get_text("help", "commands_list", LANGUAGES=LANGUAGES)
+                    commands_list_text = locale.get_text("help", "commands_list")
                     await client.send_document(
                         message.chat.id,
                         document=html_file_path,
@@ -289,7 +289,7 @@ async def helps(client, message):
                 await message.edit(caption)
                 
                 if html_file_path:
-                    commands_list_text = get_text("help", "commands_list", LANGUAGES=LANGUAGES)
+                    commands_list_text = locale.get_text("help", "commands_list")
                     await client.send_document(
                         message.chat.id,
                         document=html_file_path,

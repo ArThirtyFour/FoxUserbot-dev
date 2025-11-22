@@ -6,29 +6,29 @@ import sys
 
 from pyrogram import Client
 
-from command import fox_command, fox_sudo, who_message, get_text
+from command import Locale, fox_command, fox_sudo, who_message
 from modules.core.settings.main_settings import file_list, module_list
 
 filename = os.path.basename(__file__)
 Module_Name = 'Unloadmod'
 
-LANGUAGES = {
-    "en": {
-        "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Specify module name</b>",
-        "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Module successfully unloaded</b>",
-        "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Error while unloading</b> \n <spoiler>{error}</spoiler>"
-    },
-    "ru": {
-        "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Укажите название модуля</b>",
-        "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Модуль успешно выгружен</b>",
-        "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Ошибка при выгрузке</b> \n <spoiler>{error}</spoiler>"
-    },
-    "ua": {
-        "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Вкажіть назву модуля</b>",
-        "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Модуль успішно видалено</b>",
-        "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Помилка при видаленні</b> \n <spoiler>{error}</spoiler>"
-    }
+en_strings = {
+    "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Specify module name</b>",
+    "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Module successfully unloaded</b>",
+    "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Error while unloading</b> \n <spoiler>{error}</spoiler>"
 }
+ru_strings = {
+    "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Укажите название модуля</b>",
+    "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Модуль успешно выгружен</b>",
+    "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Ошибка при выгрузке</b> \n <spoiler>{error}</spoiler>"
+}
+ua_strings = {
+    "no_module": "<emoji id='5210952531676504517'>❌</emoji> <b>Вкажіть назву модуля</b>",
+    "success": "<emoji id='5237699328843200968'>✅</emoji> <b>Модуль успішно видалено</b>",
+    "error": "<emoji id='5210952531676504517'>❌</emoji> <b>Помилка при видаленні</b> \n <spoiler>{error}</spoiler>"
+}
+
+locale = Locale(en=en_strings, ru=ru_strings, ua=ua_strings)
 
 
 @Client.on_message(fox_command("unloadmod", Module_Name, filename, "[module name]") & fox_sudo())
@@ -38,7 +38,7 @@ async def unloadmod(client, message):
         text = (message.text or "").strip()
         parts = text.split(maxsplit=1)
         if len(parts) < 2:
-            await message.edit(get_text("unloadmod", "no_module", LANGUAGES=LANGUAGES))
+            await message.edit(locale.get_text("unloadmod", "no_module"))
             return
         
         module_stem = parts[1].strip().replace('.py', '')
@@ -57,9 +57,9 @@ async def unloadmod(client, message):
         except Exception:
             pass
         
-        await message.edit(get_text("unloadmod", "success", LANGUAGES=LANGUAGES))
+        await message.edit(locale.get_text("unloadmod", "success"))
     except Exception as e:
-        await message.edit(get_text("unloadmod", "error", LANGUAGES=LANGUAGES, error=str(e)))
+        await message.edit(locale.get_text("unloadmod", "error", error=str(e)))
 
 
 def _iter_plugin_handlers(module):
